@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 import os
 from pathlib import Path
+from decouple import config
 from django.contrib.messages import constants as messages
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -129,6 +130,8 @@ LOGIN_REDIRECT_URL = 'dashboard'
 LOGIN_URL = 'home'
 LOGOUT_REDIRECT_URL = 'home'
 
+AUTH_USER_MODEL = 'accounts.User'
+
 # Message tags for Bootstrap compatibility
 MESSAGE_TAGS = {
     messages.DEBUG: 'alert-secondary',
@@ -140,6 +143,11 @@ MESSAGE_TAGS = {
 
 # Email settings( Configure according to your email service)
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = config('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD')
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
