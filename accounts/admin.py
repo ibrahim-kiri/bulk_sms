@@ -63,8 +63,7 @@ class CustomUserAdmin(UserAdmin):
             'fields': (
                 'email',
                 'username',
-                'password1',
-                'password2',
+                'password',
                 'full_name'
             ),
         }),
