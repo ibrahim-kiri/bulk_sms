@@ -1,13 +1,42 @@
 from django.db import models
-from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
+from django.contrib.auth.models import BaseUserManager, AbstractBaseUser, PermissionsMixin
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
-from django.core.validators import EmailValidator
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from phonenumber_field.modelfields import PhoneNumberField
 
 # Create your models here.
+class CustomUserManager(BaseUserManager):
+    def create_user(self, username, email=None, password=None, **extra_fields):
+        if not username:
+            raise ValueError('Users must have a username')
+        
+        user = self.model(
+            username=username,
+            email=email,
+            **extra_fields
+        )
+
+        user.set_password(password)
+        user.save(using=self._db)
+        return user
+    
+    def create_superuser(self, username, email=None, password=None, **extra_fields):
+        extra_fields.setdefault('is_staff', True)
+        extra_fields.setdefault('is_superuser', True)
+        extra_fields.setdefault('is_active', True)
+
+        if extra_fields.get('is_staff') is not True:
+            raise ValueError('Superuser must have is_staff=True.')
+        if extra_fields.get('is_superuser') is not True:
+            raise ValueError('Superuser must have is_superuser=True.')
+        
+        return self.create_user(username, email, password, **extra_fields)
+    
+    def get_by_natural_key(self, username):
+        return self.get(username=username)
+
 class User(AbstractBaseUser, PermissionsMixin):
     """
     Custom User model extending Django's AbstractUser
@@ -27,7 +56,8 @@ class User(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(
         max_length=255,
         unique=True,
-        validators=[EmailValidator()],
+        blank=True,
+        null=True,
         verbose_name=_('Email Address')
     )
     phone = models.CharField(
@@ -41,10 +71,6 @@ class User(AbstractBaseUser, PermissionsMixin):
         null=True,
         verbose_name=_('Address')
     )
-    email_verified = models.BooleanField(
-        default=False,
-        verbose_name=_('Email Verified')
-    )
     created_at = models.DateTimeField(
         default=timezone.now,
         verbose_name=_('Created At')
@@ -54,9 +80,12 @@ class User(AbstractBaseUser, PermissionsMixin):
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
 
+
     # Specify which field is used for login
-    USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['username']
+    USERNAME_FIELD = 'username'
+    REQUIRED_FIELDS = []
+
+    objects = CustomUserManager()
 
     class Meta:
         """
@@ -70,7 +99,7 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         # String representation of the user returns email or username
-        return self.email or self.username
+        return self.username
     
     def get_full_name(self):
         # Return the full name of the user
@@ -146,75 +175,23 @@ class Profile(models.Model):
         """
         return self.profile_picture if self.profile_picture else None
     
-
-class TwoFactorAuth(models.Model):
-    """
-    Two-Factor Authentication configuration
-    Allows users to enable additional account security
-    """
-    auth_id = models.AutoField(primary_key=True)
-    user_id = models.OneToOneField(
-        User,
-        on_delete=models.CASCADE
-    )
-    secret_key = models.CharField(
-        max_length=255,
-        blank=True,
-        null=True
-    )
-    is_enabled = models.BooleanField(default=False)
-    last_verified = models.DateTimeField(
-        null=True,
-        blank=True
-    )
-
-    def __str__(self):
-        """
-        String representation for admin and debugging
-        """
-        return f"2FA for {self.user.username}"
-    
-    def generate_secret_key(self):
-        """
-        Generate a new secret key for two-factor authentication
-        Returns Base32 encoded secret key
-        """
-        import pyotp
-        self.secret_key = pyotp.random_base32()
-        self.save()
-        return self.secret_key
-    
-    def verify_totp(self, token):
-        """
-        Verify a a Time-based One-Time Password (TOTP)
-        One-time token provided by user
-        Returns True if token is valid, False otherwise
-        """
-        import pyotp
-        totp = pyotp.TOTP(self.secret_key)
-        return totp.verify(token)
-    
-
-# Signal to create profile automatically when user is created and 2FA creation
+# Signal to create profile automatically when user is created
 @receiver(post_save, sender=User)
 def create_user_profile(sender, instance, created, **kwargs):
     """
-    Automatically create a profile and TwoFactorAuth when a new user is created
-    Ensures each User has a corresponding Profile and TwoFactorAuth instance
+    Automatically creates a profile when a new user is created
     """
     if created:
         Profile.objects.create(users_user_id=instance)
-        TwoFactorAuth.objects.create(user_id=instance)
 
 @receiver(post_save, sender=User)
 def save_user_profile(sender, instance, **kwargs):
     """
-    Ensure profile and TwoFactorAuth are saved when User is updated
-    Handles cases where profile or TwoFactorAuth might not exist
+    Ensure profile is saved when user is updated
     """
     try:
         instance.profile.save()
-        instance.twofactorauth.save()
-    except (Profile.DoesNotExist, TwoFactorAuth.DoesNotExist):
+    except Profile.DoesNotExist:
         Profile.objects.create(users_user_id=instance)
-        TwoFactorAuth.objects.create(user_id=instance)
+
+    

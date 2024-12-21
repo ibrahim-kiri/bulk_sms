@@ -1,0 +1,111 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Biiteek BulkSMS{% endblock %}</title>
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    <!-- Header -->
+    <div id="header" class="bg-light">
+        <div class="container">
+            <div class="row align-items-center py-3">
+                <div class="col-md-4">
+                    <h2 id="logo" class="mb-0">
+                        <a href="/" class="text-decoration-none text-dark">
+                            BiiteekSMS
+                        </a>
+                    </h2>
+                </div>
+                <div class="col-md-8">
+                    <nav class="navbar navbar-expand-lg navbar-light">
+                        <div class="container-fluid p-0">
+                            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar">
+                                <span class="navbar-toggler-icon"></span>
+                            </button>
+                            <div class="collapse navbar-collapse" id="mainNavbar">
+                                <ul class="navbar-nav ms-auto">
+                                    <li class="nav-item"><a class="nav-link" href="/">Home</a></li>
+                                    <li class="nav-item"><a class="nav-link" href="/features">Features</a></li>
+                                    <li class="nav-item"><a class="nav-link" href="/pricing">Pricing</a></li>
+                                    <li class="nav-item"><a class="nav-link" href="/faq">FAQ</a></li>
+                                    <li class="nav-item"><a class="nav-link" href="/contact">Contact Us</a></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="container mt-4">
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        {% block content %}
+        {% endblock%}
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-light py-3 mt-4">
+        <div class="container">
+            <div class="card py-2">
+                <div class="card-body py-2 px-5">
+                    <div class="row align-items-center">
+                        <div class="col-md-6">
+                            <div class="footer-left">
+                                <div class="footer-links mb-1">
+                                    <a href="/" class="text-muted me-2">Home</a>
+                                    <a href="/about" class="text-muted me-2">About</a>
+                                    <a href="/register" class="text-muted me-2">Register</a>
+                                    <a href="/contact" class="text-muted me-2">Contact Us</a>
+                                </div>
+                                <div class="copyright text-muted">
+                                    &copy; {% now "Y" %} BiiteekSMS Uganda. All Rights Reserved.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 text-end">
+                            <div class="footer-right d-flex align-items-center justify-content-end">
+                                <div class="d-flex align-items-center">
+                                    <p class="mb-0 me-3">Send to any network</p>
+                                    <a href="#" class="me-2">
+                                        <img src="/static/images/network.jpg" alt="network-providers" style="max-height: 35px;" class="img-fluid">
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS and Popper.js -->
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js"></script>
+
+    <!-- Custom JS -->
+    <script src="{% static 'js/scripts.js' %}"></script>
+
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

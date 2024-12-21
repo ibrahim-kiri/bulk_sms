@@ -4,43 +4,33 @@ from django.contrib.auth.forms import (
     UserChangeForm,
     PasswordChangeForm
 )
-from django.core.exceptions import ValidationError
+from django.core.validators import RegexValidator
 from django.utils.translation import gettext_lazy as _
-import re
-from .models import User, Profile, TwoFactorAuth
+from .models import User, Profile
 
 class CustomUserCreationForm(UserCreationForm):
     """
     Form for creating a new user
     """
-    email = forms.EmailField(
-        label=_("Email"),
-        max_length=254,
-        widget=forms.EmailInput(attrs={'class': 'form-control'})
-    )
     phone = forms.CharField(
-        label=_("Phone Number"),
-        required=False,
-        widget=forms.TextInput(attrs={'class': 'form-control'}),
-        help_text=_("Enter phone number with country code, e.g., +256701234567")
+        max_length=10,
+        validators=[
+            RegexValidator(
+                regex=r'^07\d{8}$',
+                message='Phone number must be in format: 0771200001',
+                code='invalid_phone'
+            )
+        ]
     )
 
     class Meta(UserCreationForm.Meta):
         model = User
-        fields = ('username', 'email', 'full_name', 'phone', 'password')
+        fields = ('username', 'email', 'full_name', 'phone', 'address')
         widgets = {
             'username': forms.TextInput(attrs={'class': 'form-control'}),
             'full_name': forms.TextInput(attrs={'class': 'form-control'}),
-            'password': forms.PasswordInput(attrs={'class': 'form-control'})
+            'address': forms.TextInput(attrs={'class': 'form-control'})
         }
-
-    def clean_phone(self):
-        phone = self.cleaned_data.get('phone')
-        if phone:
-            # Validate phone number format
-            if not re.match(r'^\+?1?\d{9,15}$', phone):
-                raise ValidationError(_("Invalid phone number format."))
-        return phone
     
 class CustomUserChangeForm(UserChangeForm):
     """
@@ -48,12 +38,13 @@ class CustomUserChangeForm(UserChangeForm):
     """
     class Meta:
         model = User
-        fields = ('full_name', 'phone', 'address', 'email')
+        fields = ('username', 'full_name', 'email', 'phone', 'address')
         widgets = {
+            'username': forms.TextInput(attrs={'class': 'form-control'}),
             'full_name': forms.TextInput(attrs={'class': 'form-control'}),
-            'phone': forms.TextInput(attrs={'class': 'form-control'}),
-            'address': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
-            'email': forms.EmailInput(attrs={'class': 'form-control'}),
+            'email': forms.TextInput(attrs={'class': 'form-control', 'required': False}),
+            'phone': forms.Textarea(attrs={'class': 'form-control'}),
+            'address': forms.EmailInput(attrs={'class': 'form-control', 'rows': 3}),
         }
 
 class ProfileUpdateForm(forms.ModelForm):
@@ -76,14 +67,3 @@ class CustomPasswordChangeForm(PasswordChangeForm):
         # Add bootstrap classes to form fields
         for field in self.fields:
             self.fields[field].widget.attrs.update({'class': 'form-control'})
-
-class TwoFactorAuthForm(forms.ModelForm):
-    """
-    Form for managing two-factor authentication settings
-    """
-    class Meta:
-        model = TwoFactorAuth
-        fields = ('is_enabled',)
-        widgets = {
-            'is_enabled': forms.CheckboxInput(attrs={'class': 'form-check-input'})
-        }
